@@ -1,9 +1,4 @@
-FROM alpine/git:latest AS builder
-WORKDIR /opt
-RUN git clone --depth 1 https://github.com/comfyanonymous/ComfyUI.git
-WORKDIR /opt/ComfyUI
-
-FROM ubuntu:latest
+FROM ghcr.io/rocm/therock_pytorch_dev_ubuntu_24_04_gfx1151:main
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Add render/video groups
@@ -16,22 +11,15 @@ RUN apt-get update && \
     apt-get install -y git wget
 
 # Install ComfyUI dependencies
-RUN apt-get install -y python3-pip python3-venv libstdc++-12-dev python3-setuptools python3-wheel rocminfo && \
-    apt-get install -y --no-install-recommends google-perftools && \
-    wget https://repo.radeon.com/amdgpu-install/6.4/ubuntu/noble/amdgpu-install_6.4.60400-1_all.deb && \
-    apt-get install -y ./amdgpu-install_6.4.60400-1_all.deb
+RUN ln -sf /opt/rocm/lib/llvm/lib/libomp.so /lib/libomp.so \
+pip3 install --break-system-packages -i https://mirrors.aliyun.com/pypi/simple/ comfyui-frontend-package==1.23.4 comfyui-workflow-templates==0.1.51 comfyui-embedded-docs==0.2.4 torchsde einops transformers>=4.37.2 tokenizers>=0.13.3 sentencepiece safetensors>=0.4.2 aiohttp>=3.11.8 yarl>=1.18.0 alembic SQLAlchemy kornia>=0.7.1 spandrel soundfile av>=14.2.0 pydantic~=2.0 pydantic-settings~=2.0
 
-COPY --from=builder /opt/ComfyUI /comfyui
+# Install Comfy-UI
+RUN git clone --depth 1 https://github.com/comfyanonymous/ComfyUI.git /comfyui
 WORKDIR /comfyui
 
 # Install Comfy-UI Manager
 RUN git clone https://github.com/ltdrdata/ComfyUI-Manager custom_nodes/comfyui-manager
 
-SHELL ["/bin/bash", "-c"]    
-
-# Copy entrypoint script
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
 EXPOSE 8188
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["python3 main.py"]
