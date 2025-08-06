@@ -2,13 +2,11 @@ services:
   comfyui:
     image: comfyui-rocm
     container_name: comfyui-rocm
-    environment:
-      - HSA_OVERRIDE_GFX_VERSION=10.3.0
-      - HIP_VISIBLE_DEVICES=0
     network_mode: host
     devices:
       - /dev/kfd
       - /dev/dri
+      - /dev/mem
     group_add:
       - video
     ipc: host
